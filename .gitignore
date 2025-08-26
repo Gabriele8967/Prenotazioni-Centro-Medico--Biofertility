@@ -17,6 +17,10 @@ localhost.sql
 *.sql.backup
 dump.sql
 
+# Docker backup files
+Dockerfile.backup
+*.dockerfile.backup
+
 # Build outputs
 dist/
 build/

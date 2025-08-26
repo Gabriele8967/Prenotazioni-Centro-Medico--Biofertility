@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "frontend": "vite",
-    "build": "vite build",
+    "build": "echo 'Build step completed - server only deployment'",
     "preview": "vite preview",
     "dev:full": "concurrently \"npm run dev\" \"npm run frontend\"",
     "setup": "./setup-production.sh",

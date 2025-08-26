@@ -1,0 +1,34 @@
+# Railway ignore file
+# Files and directories to ignore during Railway deployment
+
+# Frontend source (not needed for backend-only deployment)  
+src/
+*.tsx
+*.ts
+!*.d.ts
+
+# React build files
+react-frontend/
+
+# Development files
+*.local
+.cache/
+.vscode/
+.idea/
+
+# Test files
+test-*
+*.test.*
+*.spec.*
+
+# Documentation
+*.md
+!README.md
+
+# Backup files
+*.backup
+*.bak
+
+# Database dumps
+localhost.sql
+*.sql.backup
