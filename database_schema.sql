@@ -166,7 +166,7 @@ CREATE TABLE `payments` (
     `booking_id` int NOT NULL,
     `amount` decimal(10,2) NOT NULL,
     `currency` varchar(3) DEFAULT 'EUR',
-    `payment_method` enum('cash', 'card', 'transfer', 'paypal', 'stripe') DEFAULT 'cash',
+    `payment_method` enum('cash', 'card', 'transfer', 'paypal') DEFAULT 'cash',
     `transaction_id` varchar(255),
     `status` enum('pending', 'completed', 'failed', 'refunded') DEFAULT 'pending',
     `payment_date` datetime,
