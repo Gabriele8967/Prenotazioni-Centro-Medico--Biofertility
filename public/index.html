@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema di Prenotazioni</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1788FB;
+            --secondary-color: #1A84EE;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+        }
+
+        .service-card {
+            cursor: pointer;
+            margin-bottom: 1rem;
+        }
+
+        .service-card.selected {
+            border: 2px solid var(--primary-color);
+            background-color: rgba(23, 136, 251, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            border-radius: 25px;
+            padding: 10px 30px;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .progress-bar {
+            background-color: var(--primary-color);
+        }
+
+        .provider-card {
+            cursor: pointer;
+        }
+
+        .provider-card.selected {
+            border: 2px solid var(--primary-color);
+            background-color: rgba(23, 136, 251, 0.05);
+        }
+
+        .time-slot {
+            cursor: pointer;
+            margin: 5px;
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+
+        .time-slot:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .time-slot.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .alert {
+            border-radius: 10px;
+        }
+
+        .step-header {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            margin: -1.25rem -1.25rem 1.25rem -1.25rem;
+            padding: 1rem 1.25rem;
+            border-radius: 15px 15px 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1 class="text-center">
+                <i class="fas fa-calendar-check"></i>
+                Sistema di Prenotazioni
+            </h1>
+            <p class="text-center lead">Prenota la tua visita in modo semplice e veloce</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Progress Bar -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" role="progressbar" style="width: 20%;" id="progressBar"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-2">
+                    <small class="text-muted">Servizio</small>
+                    <small class="text-muted">Medico</small>
+                    <small class="text-muted">Orario</small>
+                    <small class="text-muted">Dati</small>
+                    <small class="text-muted">Conferma</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Selezione Servizio -->
+        <div class="step active" id="step1">
+            <div class="card">
+                <div class="step-header">
+                    <h3><i class="fas fa-stethoscope"></i> Seleziona il Servizio</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="categoriesContainer">
+                        <!-- Le categorie verranno caricate qui -->
+                    </div>
+                    <div class="row mt-4" id="servicesContainer">
+                        <!-- I servizi verranno caricati qui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Selezione Medico -->
+        <div class="step" id="step2">
+            <div class="card">
+                <div class="step-header">
+                    <h3><i class="fas fa-user-md"></i> Seleziona il Medico</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="providersContainer">
+                        <!-- I medici verranno caricati qui -->
+                    </div>
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-secondary me-2" onclick="goToStep(1)">
+                            <i class="fas fa-arrow-left"></i> Indietro
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="goToStep(3)" id="nextToDateBtn" disabled>
+                            Avanti <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Selezione Data e Orario -->
+        <div class="step" id="step3">
+            <div class="card">
+                <div class="step-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Seleziona Data e Orario</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Seleziona la Data:</h5>
+                            <input type="date" class="form-control" id="appointmentDate" min="">
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Sede:</h5>
+                            <select class="form-select" id="locationSelect">
+                                <option value="">Caricamento...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>Seleziona l'Orario:</h5>
+                        <div id="timeSlotsContainer" class="loading">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Caricamento...</span>
+                            </div>
+                            <p>Seleziona una data per vedere gli orari disponibili...</p>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-secondary me-2" onclick="goToStep(2)">
+                            <i class="fas fa-arrow-left"></i> Indietro
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="goToStep(4)" id="nextToDataBtn" disabled>
+                            Avanti <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Inserimento Dati -->
+        <div class="step" id="step4">
+            <div class="card">
+                <div class="step-header">
+                    <h3><i class="fas fa-user"></i> I tuoi Dati</h3>
+                </div>
+                <div class="card-body">
+                    <form id="customerForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="firstName" class="form-label">Nome *</label>
+                                    <input type="text" class="form-control" id="firstName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="lastName" class="form-label">Cognome *</label>
+                                    <input type="text" class="form-control" id="lastName" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Telefono *</label>
+                                    <input type="tel" class="form-control" id="phone" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Note (opzionale)</label>
+                            <textarea class="form-control" id="notes" rows="3" placeholder="Eventuali note o richieste particolari..."></textarea>
+                        </div>
+
+                        <!-- Consenso Privacy GDPR -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="privacyConsent" required>
+                                <label class="form-check-label" for="privacyConsent">
+                                    <small>
+                                        <strong>Consenso Privacy (Obbligatorio)*</strong><br>
+                                        Ho preso visione dell'<a href="https://www.centroinfertilita.it/privacy-policy/" target="_blank">informativa privacy</a> 
+                                        e acconsento al trattamento dei miei dati personali per la gestione della prenotazione sanitaria, 
+                                        in conformità al Regolamento UE 2016/679 (GDPR) e al D.Lgs. 196/2003.
+                                    </small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="marketingConsent">
+                                <label class="form-check-label" for="marketingConsent">
+                                    <small>
+                                        Acconsento a ricevere comunicazioni promozionali e di marketing da parte di Centro Infertilità - Biofertility.
+                                    </small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Info GDPR -->
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-shield-alt"></i>
+                                <strong>Tutela dei dati:</strong> I suoi dati sono trattati in sicurezza secondo le normative GDPR. 
+                                Ha diritto di accesso, rettifica, cancellazione e portabilità dei dati. 
+                                Titolare: Centro Infertilità - Biofertility, Via Velletri 7, Roma. 
+                                Per esercitare i suoi diritti: <a href="mailto:centrimanna2@gmail.com">centrimanna2@gmail.com</a>
+                            </small>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-secondary me-2" onclick="goToStep(3)">
+                            <i class="fas fa-arrow-left"></i> Indietro
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="goToStep(5)">
+                            Avanti <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Riepilogo e Conferma -->
+        <div class="step" id="step5">
+            <div class="card">
+                <div class="step-header">
+                    <h3><i class="fas fa-check-circle"></i> Riepilogo Prenotazione</h3>
+                </div>
+                <div class="card-body">
+                    <div id="bookingSummary">
+                        <!-- Il riepilogo verrà generato qui -->
+                    </div>
+
+                    <div class="alert alert-info mt-4">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Importante:</strong> Riceverai una email di conferma con tutti i dettagli della prenotazione.
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="button" class="btn btn-secondary me-2" onclick="goToStep(4)">
+                            <i class="fas fa-arrow-left"></i> Modifica
+                        </button>
+                        <button type="button" class="btn btn-success" onclick="confirmBooking()" id="confirmBtn">
+                            <i class="fas fa-check"></i> Conferma Prenotazione
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div class="step" id="successStep">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="text-success mb-3">
+                        <i class="fas fa-check-circle" style="font-size: 4rem;"></i>
+                    </div>
+                    <h2 class="text-success">Prenotazione Confermata!</h2>
+                    <p class="lead">La tua prenotazione è stata registrata con successo.</p>
+                    <div id="successDetails" class="mt-4">
+                        <!-- I dettagli della prenotazione confermata verranno mostrati qui -->
+                    </div>
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary" onclick="newBooking()">
+                            <i class="fas fa-plus"></i> Nuova Prenotazione
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Caricamento...</span>
+                    </div>
+                    <h5>Elaborazione in corso...</h5>
+                    <p class="text-muted">Stiamo confermando la tua prenotazione</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="js/booking.js"></script>
+</body>
+</html>

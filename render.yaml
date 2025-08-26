@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: prenotazioni-frontend
+    env: node
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: prenotazioni-db
+          property: connectionString
+      - key: COMPANY_NAME
+        value: "Centro Infertilità - Biofertility"
+      - key: COMPANY_EMAIL
+        value: "centrimanna2@gmail.com"
+      - key: ADMIN_EMAIL
+        value: "centrimanna2@gmail.com"
+      - key: PAYMENT_URL
+        value: "https://www.centroinfertilita.it/pagamento-personalizzato/"
+
+databases:
+  - name: prenotazioni-db
+    databaseName: prenotazioni
+    user: prenotazioni_user
