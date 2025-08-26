@@ -115,7 +115,7 @@ export function Header() {
             </div>
             <div className="flex items-center gap-4">
               <span>📞 +39 06 8415269</span>
-              <span>✉️ centrimanna2@gmail.com</span>
+              <span>✉️ info@centromedico.it</span>
             </div>
           </div>
         </div>

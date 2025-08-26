@@ -375,10 +375,10 @@ export function CustomerForm() {
                   <br />
                   <strong>Per esercitare i suoi diritti:</strong>{' '}
                   <a 
-                    href="mailto:centrimanna2@gmail.com" 
+                    href="mailto:info@centromedico.it" 
                     className="text-primary hover:underline"
                   >
-                    centrimanna2@gmail.com
+                    info@centromedico.it
                   </a>
                 </p>
               </div>

@@ -316,11 +316,11 @@ export function BookingSuccess() {
             {state.location?.phone}
           </a>
           <a 
-            href="mailto:centrimanna2@gmail.com"
+            href="mailto:info@centromedico.it"
             className="flex items-center gap-2 text-primary hover:underline"
           >
             <Mail className="w-4 h-4" />
-            centrimanna2@gmail.com
+            info@centromedico.it
           </a>
         </div>
       </motion.div>
