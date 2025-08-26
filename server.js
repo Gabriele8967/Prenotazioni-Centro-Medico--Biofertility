@@ -20,7 +20,7 @@ const locationsRoutes = require('./routes/locations');
 const categoriesRoutes = require('./routes/categories');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || process.env.RAILWAY_PORT || 3000;
 
 // Initialize calendar sync service
 let calendarSync = null;
@@ -97,15 +97,19 @@ app.use((req, res, next) => {
     next();
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
+// Health check endpoints (both /health and /api/health for compatibility)
+const healthCheck = (req, res) => {
     res.json({
         success: true,
         message: 'Sistema di prenotazioni online',
         timestamp: new Date().toISOString(),
-        version: '1.0.0'
+        version: '1.0.0',
+        status: 'healthy'
     });
-});
+};
+
+app.get('/health', healthCheck);
+app.get('/api/health', healthCheck);
 
 // API routes
 app.use('/api/services', servicesRoutes);
@@ -259,13 +263,15 @@ async function startServer() {
         }
 
         // Start server
-        app.listen(PORT, () => {
+        app.listen(PORT, '0.0.0.0', () => {
             console.log('\n🚀 ===== SISTEMA DI PRENOTAZIONI =====');
             console.log(`📍 Server in esecuzione su porta ${PORT}`);
             console.log(`🌍 URL: http://localhost:${PORT}`);
             console.log(`📚 API Base: http://localhost:${PORT}/api`);
             console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+            console.log(`🏥 Health Check Alt: http://localhost:${PORT}/api/health`);
             console.log(`🔧 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`🔧 Railway Port: ${process.env.RAILWAY_PORT || 'not set'}`);
             console.log('=====================================\n');
             
             if (process.env.NODE_ENV === 'development') {
