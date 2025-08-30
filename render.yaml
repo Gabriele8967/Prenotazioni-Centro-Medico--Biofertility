@@ -1,27 +1,49 @@
+# Render.com - Deploy Gratuito Centro Biofertility
 services:
+  # Backend Node.js + Frontend React
   - type: web
-    name: prenotazioni-frontend
+    name: centro-biofertility
     env: node
-    buildCommand: npm run build
-    startCommand: npm start
-    healthCheckPath: /api/health
+    plan: free
+    buildCommand: npm install && cd react-frontend && npm install && npm run build && cd ..
+    startCommand: node server.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT  
+        value: 10000
       - key: DATABASE_URL
         fromDatabase:
-          name: prenotazioni-db
+          name: biofertility-db
           property: connectionString
-      - key: COMPANY_NAME
-        value: "Centro Infertilità - Biofertility"
+      - key: FRONTEND_URL
+        value: https://centro-biofertility.onrender.com
+      - key: API_URL
+        value: https://centro-biofertility.onrender.com/api
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD  
+        sync: false
       - key: COMPANY_EMAIL
-        value: "centrimanna2@gmail.com"
-      - key: ADMIN_EMAIL
-        value: "centrimanna2@gmail.com"
-      - key: PAYMENT_URL
-        value: "https://www.centroinfertilita.it/pagamento-personalizzato/"
+        value: "info@biofertility.it"
+      - key: COMPANY_NAME
+        value: "Centro Biofertility"
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REFRESH_TOKEN
+        sync: false
+      - key: GOOGLE_CALENDAR_ID
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEBHOOK_URL
+        value: https://centro-biofertility.onrender.com/api/calendar/webhook
 
 databases:
-  - name: prenotazioni-db
-    databaseName: prenotazioni
-    user: prenotazioni_user
+  - name: biofertility-db
+    plan: free  
+    databaseName: prenotazioni_system
+    user: biofertility_user

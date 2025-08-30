@@ -4,34 +4,30 @@ require('dotenv').config();
 // Configurazione della connessione al database
 let dbConfig;
 
-// Railway fornisce DATABASE_URL, altrimenti usa variabili individuali
+// Railway/Render fornisce DATABASE_URL, altrimenti usa variabili individuali
 if (process.env.DATABASE_URL) {
-    console.log('🔗 Usando DATABASE_URL (Railway/Produzione)');
+    console.log('🔗 Usando DATABASE_URL (Hosting Esterno)');
     dbConfig = {
         uri: process.env.DATABASE_URL,
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
-        acquireTimeout: 60000,
-        timeout: 60000,
-        reconnect: true,
-        charset: 'utf8mb4'
+        charset: 'utf8mb4',
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     };
 } else {
-    console.log('🔗 Usando configurazione locale');
+    console.log('🔗 Usando configurazione individuale');
     dbConfig = {
-        host: process.env.DB_HOST || 'localhost',
-        port: process.env.DB_PORT || 3306,
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD || '',
-        database: process.env.DB_NAME || 'prenotazioni_system',
+        host: process.env.MYSQL_HOST || process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.MYSQL_PORT || process.env.DB_PORT || '3306'),
+        user: process.env.MYSQL_USER || process.env.DB_USER || 'root',
+        password: process.env.MYSQL_PASSWORD || process.env.DB_PASSWORD || '',
+        database: process.env.MYSQL_DATABASE || process.env.DB_NAME || 'prenotazioni_system',
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
-        acquireTimeout: 60000,
-        timeout: 60000,
-        reconnect: true,
-        charset: 'utf8mb4'
+        charset: 'utf8mb4',
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     };
 }
 

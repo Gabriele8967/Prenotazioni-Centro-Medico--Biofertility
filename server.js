@@ -119,6 +119,23 @@ app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/locations', locationsRoutes);
 app.use('/api/categories', categoriesRoutes);
 
+// Serve static frontend files (React build)
+if (process.env.NODE_ENV === 'production') {
+    const path = require('path');
+    
+    // Serve React static files
+    app.use(express.static(path.join(__dirname, 'react-frontend/dist')));
+    
+    // Serve React app for all non-API routes (SPA routing)
+    app.get('*', (req, res, next) => {
+        // Skip API routes
+        if (req.originalUrl.startsWith('/api/') || req.originalUrl.startsWith('/health')) {
+            return next();
+        }
+        res.sendFile(path.join(__dirname, 'react-frontend/dist/index.html'));
+    });
+}
+
 // Calendar sync webhook endpoint
 app.post('/api/calendar/webhook', async (req, res) => {
     if (calendarSync) {
@@ -230,13 +247,23 @@ app.use((err, req, res, next) => {
     });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-    res.status(404).json({
-        success: false,
-        message: `Route ${req.method} ${req.originalUrl} non trovata`
+// 404 handler only for API routes in production
+if (process.env.NODE_ENV === 'production') {
+    app.use('/api/*', (req, res) => {
+        res.status(404).json({
+            success: false,
+            message: `API route ${req.method} ${req.originalUrl} non trovata`
+        });
     });
-});
+} else {
+    // Development 404 handler for all routes
+    app.use('*', (req, res) => {
+        res.status(404).json({
+            success: false,
+            message: `Route ${req.method} ${req.originalUrl} non trovata`
+        });
+    });
+}
 
 // Server startup
 async function startServer() {
