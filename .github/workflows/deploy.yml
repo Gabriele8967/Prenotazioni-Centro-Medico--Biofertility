@@ -1,0 +1,171 @@
+# GitHub Actions - Deploy automatico DigitalOcean
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Job 1: Test e Build Backend
+  test-backend:
+    runs-on: ubuntu-latest
+    name: Test Backend API
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testpassword
+          MYSQL_DATABASE: test_prenotazioni
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Wait for MySQL
+      run: |
+        while ! mysqladmin ping -h127.0.0.1 -P3306 -uroot -ptestpassword --silent; do
+          echo "Waiting for MySQL..."
+          sleep 2
+        done
+
+    - name: Setup test database
+      run: |
+        mysql -h127.0.0.1 -P3306 -uroot -ptestpassword test_prenotazioni < database_schema.sql
+        mysql -h127.0.0.1 -P3306 -uroot -ptestpassword test_prenotazioni < init-data.sql
+      env:
+        MYSQL_HOST: 127.0.0.1
+        MYSQL_PORT: 3306
+        MYSQL_USER: root
+        MYSQL_PASSWORD: testpassword
+        MYSQL_DATABASE: test_prenotazioni
+
+    - name: Run backend tests
+      run: npm test
+      env:
+        NODE_ENV: test
+        MYSQL_HOST: 127.0.0.1
+        MYSQL_PORT: 3306
+        MYSQL_USER: root
+        MYSQL_PASSWORD: testpassword
+        MYSQL_DATABASE: test_prenotazioni
+
+  # Job 2: Test e Build Frontend
+  test-frontend:
+    runs-on: ubuntu-latest
+    name: Test Frontend React
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: 'react-frontend/package-lock.json'
+
+    - name: Install frontend dependencies
+      run: |
+        cd react-frontend
+        npm ci
+
+    - name: Build frontend
+      run: |
+        cd react-frontend
+        npm run build
+      env:
+        VITE_API_URL: https://centro-biofertility-prenotazioni.ondigitalocean.app
+        VITE_FRONTEND_URL: https://centro-biofertility-prenotazioni.ondigitalocean.app
+
+    - name: Upload frontend build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: react-frontend/dist/
+        retention-days: 1
+
+  # Job 3: Security & Code Quality
+  security-check:
+    runs-on: ubuntu-latest
+    name: Security & Quality Check
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: npm audit --audit-level=high
+
+    - name: Check for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+
+  # Job 4: Deploy (solo su push main)
+  deploy:
+    needs: [test-backend, test-frontend, security-check]
+    runs-on: ubuntu-latest
+    name: Deploy to DigitalOcean
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Deploy to DigitalOcean App Platform
+      uses: digitalocean/app_action@v1.1.5
+      with:
+        app_name: centro-biofertility-prenotazioni
+        token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+    - name: Notify deployment success
+      if: success()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: "🚀 Deploy completed successfully to DigitalOcean!"
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Notify deployment failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: "❌ Deploy failed! Check the logs."
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
